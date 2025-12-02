@@ -15,10 +15,10 @@ const PASSWORD = __ENV.PASSWORD || "password123";
 // Test options for performance testing
 export const options = {
   stages: [
-    { duration: "10s", target: 5 },    // Ramp-up to 5 users
-    { duration: "10s", target: 20 },   // Ramp-up to 20 users
-    { duration: "20s", target: 20 },   // Sustain at 20 users (main performance test)
-    { duration: "10s", target: 0 },    // Ramp-down
+    { duration: "5s", target: 50 },    // Ramp-up to 5 users
+    { duration: "15s", target: 200 },   // Ramp-up to 20 users
+    { duration: "30s", target: 200 },   // Sustain at 20 users (main performance test)
+    { duration: "15s", target: 0 },    // Ramp-down
   ],
   thresholds: {
     "http_req_duration": ["p(95)<500", "p(99)<1000", "avg<300"],
@@ -39,8 +39,7 @@ const testMessages = [
 ];
 
 // Session cookies storage (per VU)
-let accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY0MDY4ODI5LCJpYXQiOjE3NjQwNjUyMjksImp0aSI6ImZlYTYwNTQ0NWU4MzQwN2JhZGI4NGQxNzUxOTE5ZmU1IiwidXNlcl9pZCI6IjEifQ.cLjgba841kLTqJ95DbhT8RpiS9lBHtZA_bSfvrj7JA8";
-
+let accessToken = null;
 // Helper function to authenticate and get JWT token
 function authenticate() {
 
@@ -76,7 +75,7 @@ export default function () {
     // Send message with random content from test data
     const messagePayload = JSON.stringify({
       message: testMessages[Math.floor(Math.random() * testMessages.length)],
-      room_id: 1,
+      room_id: Math.floor(Math.random() * 10) + 1, // Random room_id between 1-10
     });
 
     const params = {
