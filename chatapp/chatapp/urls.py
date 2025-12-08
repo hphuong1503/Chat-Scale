@@ -24,9 +24,9 @@ from chat import views as chat_views
 
 router = routers.DefaultRouter()
 router.register(r"users", quickstart_views.UserViewSet)
-router.register(r"groups", quickstart_views.GroupViewSet)
 router.register(r"auth", quickstart_views.AuthViewSet, basename="auth")
 router.register(r"messages", chat_views.MessageViewSet, basename="message")
+router.register(r"rooms", chat_views.RoomViewSet, basename="room")
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

@@ -1,11 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 import logging
 
-from rest_framework import viewsets, parsers, status
+from rest_framework import viewsets, parsers, status, decorators, permissions
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
-from .models import Message
-from .serializer import MessageSerializer
+from .models import Message, Room, RoomMember
+from .serializer import MessageSerializer, RoomSerializer, RoomMemberSerializer
 from .tasks import create_message_task
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -15,6 +16,113 @@ logger = logging.getLogger(__name__)
 # Sync with serializer / settings
 MAX_MESSAGE_BYTES = 10 * 1024  # 10 KB
 asyncapp = True
+
+class RoomViewSet(viewsets.ModelViewSet):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Room.objects.filter(members__user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        room_type = request.data.get('room_type', 'GROUP')
+        
+        if room_type == 'DIRECT':
+            target_user_id = request.data.get('target_user_id')
+            if not target_user_id:
+                raise ValidationError({"detail": "target_user_id is required for DIRECT room."})
+            
+            existing_room = Room.objects.filter(room_type='DIRECT').filter(members__user=self.request.user).filter(members__user__id=target_user_id).first()
+            
+            if existing_room:
+                serializer = self.get_serializer(existing_room)
+                return Response(serializer.data)
+            
+            room = Room.objects.create(room_type='DIRECT', created_by=self.request.user)
+            RoomMember.objects.create(room=room, user=self.request.user, role='MEMBER')
+            try:
+                RoomMember.objects.create(room=room, user_id=target_user_id, role='MEMBER')
+            except Exception:
+                room.delete()
+                raise ValidationError({"detail": "Invalid target_user_id"})
+            
+            serializer = self.get_serializer(room)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        room = serializer.save(created_by=self.request.user)
+        RoomMember.objects.create(room=room, user=self.request.user, role='ADMIN')
+        
+        # Logic add members for GROUP room
+        if room.room_type == 'GROUP':
+            members = self.request.data.get('members')
+            if members and isinstance(members, list):
+                for user_id in members:
+                    # Skip if adding self (already added as ADMIN)
+                    if str(user_id) == str(self.request.user.id):
+                        continue
+                    try:
+                        RoomMember.objects.create(room=room, user_id=user_id, role='MEMBER')
+                    except Exception:
+                        # Ignore invalid users or duplicates
+                        pass
+
+    @decorators.action(detail=True, methods=['get', 'post'], url_path='members')
+    def members(self, request, pk=None):
+        room = self.get_object()
+        if request.method == 'GET':
+            members = RoomMember.objects.filter(room=room)
+            serializer = RoomMemberSerializer(members, many=True)
+            return Response(serializer.data)
+        
+        if request.method == 'POST':
+            user_id = request.data.get('user_id')
+            if not user_id:
+                return Response({"detail": "user_id required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if room.room_type == 'DIRECT':
+                 return Response({"detail": "Cannot add members to DIRECT room"}, status=status.HTTP_400_BAD_REQUEST)
+
+            membership = RoomMember.objects.filter(room=room, user=request.user).first()
+            if not membership or membership.role != 'ADMIN':
+                 return Response({"detail": "Only Admin can add members"}, status=status.HTTP_403_FORBIDDEN)
+
+            if RoomMember.objects.filter(room=room, user_id=user_id).exists():
+                return Response({"detail": "User already in room"}, status=status.HTTP_400_BAD_REQUEST)
+
+            RoomMember.objects.create(room=room, user_id=user_id, role='MEMBER')
+            return Response({"status": "Member added"})
+
+    @decorators.action(detail=True, methods=['delete'], url_path='members/(?P<user_id>[^/.]+)')
+    def remove_member(self, request, pk=None, user_id=None):
+        room = self.get_object()
+        if room.room_type == 'DIRECT':
+             return Response({"detail": "Cannot remove members from DIRECT room"}, status=status.HTTP_400_BAD_REQUEST)
+
+        membership = RoomMember.objects.filter(room=room, user=request.user).first()
+        if not membership or membership.role != 'ADMIN':
+             return Response({"detail": "Only Admin can remove members"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            member_to_remove = RoomMember.objects.get(room=room, user_id=user_id)
+            member_to_remove.delete()
+            return Response({"status": "Member removed"})
+        except RoomMember.DoesNotExist:
+            return Response({"detail": "Member not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @decorators.action(detail=True, methods=['get'])
+    def messages(self, request, pk=None):
+        room = self.get_object()
+        messages = Message.objects.filter(room=room).order_by('-created_at')
+        page = self.paginate_queryset(messages)
+        if page is not None:
+            serializer = MessageSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
 
 class MessageViewSet(viewsets.ModelViewSet):
     """API endpoint that allows messages to be viewed or created."""
@@ -38,6 +146,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Create a new message asynchronously."""
         # Validate content length
+        logging.log.info("self action: %s", self.action )
         content_length = request.META.get("CONTENT_LENGTH")
         if not self._validate_content_length(content_length):
             return Response(
@@ -57,49 +166,12 @@ class MessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
+        room = serializer.validated_data['room']
         create_message_task.delay(
                 sender_id=user_id,
                 message=serializer.validated_data['message'],
-                room_id=serializer.validated_data.get('room_id', 1)
+                room_id=room.id
             )
-        
-        # if asyncapp == True:
-        # # Queue message creation task
-        #     logger.info(f"Creating message for user Celery: {user_id}")
-            
-        # else:
-        #     try:
-        #         logger.info(f"Creating message for user Sync: {user_id}")
-        #         message_obj = Message.objects.create(
-        #             sender_id=user_id,
-        #             message=serializer.validated_data["message"],
-        #             room_id=serializer.validated_data.get("room_id", 1),
-        #         )
-                
-        #         # Send message to WebSocket group
-        #         channel_layer = get_channel_layer()
-        #         async_to_sync(channel_layer.group_send)(
-        #             f'chat_{message_obj.room_id}',
-        #             {
-        #                 'type': 'chat_message',
-        #                 'message': message_obj.message,
-        #                 'sender_id': message_obj.sender_id,
-        #                 'room_id': message_obj.room_id
-        #             }
-        #         )
-
-        #     except Exception:
-        #         logger.exception("Synchronous message creation failed")
-        #         return Response(
-        #             {"detail": "Failed to create message."},
-        #             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #         )
-            
-
-        #     return Response(
-        #     {"status": "Message creation queued"},
-        #     status=status.HTTP_202_ACCEPTED
-        #     )
         
         return Response(
             {"status": "Message creation queued"},
