@@ -1,36 +1,39 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from .models import Message
+from django.contrib.auth import get_user_model
+from .models import Message, Room, RoomMember
 
+User = get_user_model()
 MAX_MESSAGE_BYTES = 10 * 1024  # 10 KB
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+
+class RoomMemberSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = RoomMember
+        fields = ['user', 'role', 'joined_at']
+
+class RoomSerializer(serializers.ModelSerializer):
+    members = RoomMemberSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Room
+        fields = ['id', 'name', 'description', 'room_type', 'created_by', 'created_at', 'updated_at', 'members']
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
 class MessageSerializer(serializers.ModelSerializer):
-    # map hidden field -> model field 'sender' (server-set)
     sender = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
 
     class Meta:
         model = Message
-        # explicit whitelist
-        fields = ("id", "sender", "message", "room_id", "created_at")
+        fields = ("id", "sender", "message", "room", "created_at")
         read_only_fields = ("id", "created_at")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # incoming = {}
-        # if hasattr(self, "initial_data") and self.initial_data is not None:
-        #     try:
-        #         incoming = set(self.initial_data.keys())
-        #     except Exception:
-        #         incoming = set()
-        # writable = {
-        #     name for name, field in self.fields.items()
-        #     if (not getattr(field, "read_only", False)) and (not isinstance(field, serializers.HiddenField))
-        # }
-        # unexpected = incoming - writable
-        # if unexpected:
-        #     raise serializers.ValidationError({
-        #         "detail": _("Unexpected or not-writable fields in request: ") + ", ".join(sorted(unexpected))
-        #     })
 
     def validate_message(self, value):
         if not isinstance(value, str):

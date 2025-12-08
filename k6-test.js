@@ -1,6 +1,6 @@
 import http from "k6/http";
-import { check, group, sleep } from "k6";
-import { Rate, Trend, Counter, Gauge } from "k6/metrics";
+import { check, sleep } from "k6";
+import { Rate, Trend, Counter } from "k6/metrics";
 
 // Custom metrics
 const successRate = new Rate("message_creation_success");
@@ -15,10 +15,10 @@ const PASSWORD = __ENV.PASSWORD || "password123";
 // Test options for performance testing
 export const options = {
   stages: [
-    { duration: "5s", target: 50 },    // Ramp-up to 5 users
-    { duration: "15s", target: 200 },   // Ramp-up to 20 users
-    { duration: "30s", target: 200 },   // Sustain at 20 users (main performance test)
-    { duration: "15s", target: 0 },    // Ramp-down
+    { duration: "5s", target: 10 },    // Ramp-up to 10 users
+    { duration: "100s", target: 200 },   // Ramp-up to 50 users
+    { duration: "200s", target: 200 },   // Sustain at 50 users
+    { duration: "5s", target: 0 },     // Ramp-down
   ],
   thresholds: {
     "http_req_duration": ["p(95)<500", "p(99)<1000", "avg<300"],
@@ -27,7 +27,7 @@ export const options = {
   },
 };
 
-// Test data - various message lengths for realistic performance testing
+// Test data
 const testMessages = [
   "Hello, this is a test message",
   "How are you doing today?",
@@ -38,44 +38,60 @@ const testMessages = [
   "Message content for stress testing the backend",
 ];
 
-// Session cookies storage (per VU)
-let accessToken = null;
-// Helper function to authenticate and get JWT token
-function authenticate() {
-
-  if (accessToken) return accessToken;
-
+// Helper function to authenticate
+function login() {
   const loginPayload = JSON.stringify({
     username: USERNAME,
     password: PASSWORD,
   });
 
   const response = http.post(`${BASE_URL}/auth/login/`, loginPayload, {
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
   });
 
   if (response.status === 200) {
-    const body = JSON.parse(response.body);
-    accessToken = body.access;
-    console.log(`Authenticated. Access token`); 
-    return accessToken;
+    return JSON.parse(response.body).access;
+  }
+  throw new Error(`Login failed: ${response.status} - ${response.body}`);
+}
+
+// Setup: Run once before the test to create a room
+export function setup() {
+  const token = login();
+  
+  // Create a Group Room for testing
+  const roomPayload = JSON.stringify({
+    name: `Load Test Room ${new Date().getTime()}`,
+    description: "Room created by k6 for load testing",
+    room_type: "GROUP"
+  });
+
+  const res = http.post(`${BASE_URL}/rooms/`, roomPayload, {
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (res.status !== 201) {
+    throw new Error(`Failed to create test room: ${res.status} - ${res.body}`);
   }
 
-  console.error(`Login response: ${response.status} - ${response.body}`);
-  throw new Error(`Authentication failed: ${response.status}`);
+  const room = JSON.parse(res.body);
+  console.log(`Setup: Created test room ${room.id}`);
+  
+  return { roomId: room.id, token: token };
 }
 
 // Main performance test function
-export default function () {
+export default function (data) {
+  const { roomId, token } = data; // Use data from setup
+
   try {
-    // Authenticate once per VU and reuse JWT token
-    const token = authenticate();
-    // Send message with random content from test data
+    // Send message with random content
     const messagePayload = JSON.stringify({
       message: testMessages[Math.floor(Math.random() * testMessages.length)],
-      room_id: Math.floor(Math.random() * 10) + 1, // Random room_id between 1-10
+      room: roomId, // Use the UUID from setup
     });
 
     const params = {
@@ -112,4 +128,16 @@ export default function () {
   }
 
   sleep(Math.random() * 2); // Random sleep between 0-2 seconds
+}
+
+// Teardown: Run once after the test to clean up
+export function teardown(data) {
+  if (data.roomId && data.token) {
+    const res = http.del(`${BASE_URL}/rooms/${data.roomId}/`, null, {
+      headers: {
+        "Authorization": `Bearer ${data.token}`,
+      },
+    });
+    console.log(`Teardown: Deleted test room ${data.roomId} (Status: ${res.status})`);
+  }
 }

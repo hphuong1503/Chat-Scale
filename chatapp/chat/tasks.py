@@ -19,8 +19,8 @@ def create_message_task(sender_id, message, room_id):
         {
             'type': 'chat_message',
             'message': message,
-            'sender_id': sender_id,
-            'room_id': room_id
+            'sender_id': str(sender_id),
+            'room_id': str(room_id)
         }
     )
     return "Message created"

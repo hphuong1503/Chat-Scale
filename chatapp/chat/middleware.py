@@ -75,6 +75,6 @@ class JWTUserIDMiddleware(MiddlewareMixin):
         try:
             decoded_token = AccessToken(token)
             return decoded_token.get('user_id')
-        except InvalidToken:
-            logger.warning("Invalid JWT token provided")
+        except Exception as e:
+            logger.warning(f"Invalid or Expired JWT token provided: {e}")
             return None
