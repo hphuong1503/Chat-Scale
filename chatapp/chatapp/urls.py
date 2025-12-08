@@ -33,4 +33,5 @@ router.register(r"rooms", chat_views.RoomViewSet, basename="room")
 urlpatterns = [
     path("", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+    path("prometheus/", include("django_prometheus.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

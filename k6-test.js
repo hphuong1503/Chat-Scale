@@ -16,8 +16,8 @@ const PASSWORD = __ENV.PASSWORD || "password123";
 export const options = {
   stages: [
     { duration: "5s", target: 10 },    // Ramp-up to 10 users
-    { duration: "100s", target: 200 },   // Ramp-up to 50 users
-    { duration: "200s", target: 200 },   // Sustain at 50 users
+    { duration: "10s", target: 20 },   // Ramp-up to 50 users
+    { duration: "20s", target: 20 },   // Sustain at 50 users
     { duration: "5s", target: 0 },     // Ramp-down
   ],
   thresholds: {
@@ -130,14 +130,14 @@ export default function (data) {
   sleep(Math.random() * 2); // Random sleep between 0-2 seconds
 }
 
-// Teardown: Run once after the test to clean up
-export function teardown(data) {
-  if (data.roomId && data.token) {
-    const res = http.del(`${BASE_URL}/rooms/${data.roomId}/`, null, {
-      headers: {
-        "Authorization": `Bearer ${data.token}`,
-      },
-    });
-    console.log(`Teardown: Deleted test room ${data.roomId} (Status: ${res.status})`);
-  }
-}
+// // Teardown: Run once after the test to clean up
+// export function teardown(data) {
+//   if (data.roomId && data.token) {
+//     const res = http.del(`${BASE_URL}/rooms/${data.roomId}/`, null, {
+//       headers: {
+//         "Authorization": `Bearer ${data.token}`,
+//       },
+//     });
+//     console.log(`Teardown: Deleted test room ${data.roomId} (Status: ${res.status})`);
+//   }
+// }

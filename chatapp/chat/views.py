@@ -146,7 +146,6 @@ class MessageViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Create a new message asynchronously."""
         # Validate content length
-        logging.log.info("self action: %s", self.action )
         content_length = request.META.get("CONTENT_LENGTH")
         if not self._validate_content_length(content_length):
             return Response(
