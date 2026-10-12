@@ -85,4 +85,8 @@ npm-debug.log
 .env.*.local
 secrets/
 credentials/
+
+# Roadmap & Todo
+TODO.md
+ROADMAP.md
 production-roadmap/
