@@ -12,8 +12,31 @@ class Room(models.Model):
     description = models.TextField(blank=True, null=True)
     room_type = models.CharField(max_length=10, choices=ROOM_TYPES, default='GROUP')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_rooms")
+    direct_user1 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="direct_rooms_as_user1"
+    )
+    direct_user2 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="direct_rooms_as_user2"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['direct_user1', 'direct_user2'],
+                condition=models.Q(room_type='DIRECT'),
+                name='unique_direct_pair'
+            )
+        ]
 
     def __str__(self):
         return self.name or str(self.id)

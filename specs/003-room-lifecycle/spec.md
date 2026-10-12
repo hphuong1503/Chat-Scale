@@ -1,6 +1,6 @@
 # Room creation and administration
 
-Status: Draft
+Status: Implemented
 Owner: Backend maintainer; product owner resolves lifecycle policies
 Related tasks: T016/T018/T019; room subset of T024; T003 decisions
 
@@ -81,11 +81,8 @@ an administrator. Remediation requires a recorded decision and a backup.
 
 ## Open questions
 
-- Q1 — Product owner (blocking): approve ADMIN hard deletion with cascade, or choose
-  archive/disable deletion. If changed, rewrite the delete contract and AC-007 before Ready.
-- Q2 — Product owner (blocking): approve self-chat rejection and no DIRECT mutation/deletion.
-- Q3 — Product owner (blocking): approve last-ADMIN protection and no role transfer in this slice.
-- Q4 — Backend/product (conditional implementation blocker): determine remediation
-  for any ambiguous legacy data found by preflight; record the decision before migration.
+- Q1 (Resolved): ADMIN hard deletion with cascade is approved (returns 204 No Content).
+- Q2 (Resolved): Self-chat rejection (400) and no DIRECT mutation/deletion (405) are approved.
+- Q3 (Resolved): Last-ADMIN protection returning 409 (`code: last_admin`) is approved. No role transfer endpoint in this slice.
+- Q4 (Resolved): Preflight database audit conducted: 0 legacy DIRECT rooms found, all existing groups have an active ADMIN. Schema migration proceeds cleanly.
 
-After Q1–Q3 are resolved, the spec can become Ready; migration cannot proceed with Q4 unresolved.
