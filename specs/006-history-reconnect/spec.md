@@ -12,8 +12,10 @@ realtime and optimistic copies into one visible message without skipping late co
 ## Scope
 
 Room order/cursors, bounded history and catch-up API, subscription handshake,
-client deduplication/retry state and reconnect. Dependencies: 003 canonical DTO,
-004 durable writes, 001 access rules, and restored frontend with working WS (T001/T022).
+client deduplication/retry state and reconnect. Dependencies: 004 canonical DTO,
+005 durable writes, 001 access rules, and
+[002-frontend-foundation](../002-frontend-foundation/spec.md) for the basic client
+and working WS (T001/T022).
 Exclude read receipts/unread counts, edits/deletes, active socket revocation (T038),
 production WS ticket design (T045), and multi-region ordering.
 

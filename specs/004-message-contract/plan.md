@@ -27,6 +27,6 @@ while source is unavailable.
 
 Deploy additive server representations before the new client adapter. Existing
 clients should continue reading aliases. Avoid any schema migration solely for a
-null placeholder client_message_id; storage is owned by 004. Keep dual fields until
+null placeholder client_message_id; storage is owned by 005. Keep dual fields until
 client compatibility is demonstrated; rollback the client first if reverting server
 fields. Preserve the old queued write semantics throughout this spec.

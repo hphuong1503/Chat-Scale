@@ -13,11 +13,12 @@ can identify it, attribute it to a sender, and display its canonical timestamp.
 
 Canonical DTO, persisted-message REST serialization, WS event payload and client
 adapter after source restoration. Keep the queued send contract from spec 001 until
-spec 004 replaces it. Exclude outbox/retry implementation, cursor ordering, receipts,
+spec 005 replaces it. Exclude outbox/retry implementation, cursor ordering, receipts,
 message editing/deletion and global API error standardization.
 
-Dependencies: [001-room-access](../001-room-access/spec.md) for permissions; T001
-for frontend build/E2E. Backend work may proceed independently, but this spec cannot
+Dependencies: [001-room-access](../001-room-access/spec.md) for permissions and
+[002-frontend-foundation](../002-frontend-foundation/spec.md) for source/build and
+the basic client. Backend work may proceed independently, but this spec cannot
 be Implemented until its client compatibility criterion passes.
 
 ## Contract
@@ -40,7 +41,7 @@ ID without a persisted message ID or timestamp. The proposed canonical DTO is:
 
 IDs for messages/rooms are UUID strings; sender.id retains the current integer user
 ID. created_at is the persisted UTC timestamp in ISO 8601, never the browser clock.
-client_message_id is null for legacy rows and queued sends until spec 004 persists it.
+client_message_id is null for legacy rows and queued sends until spec 005 persists it.
 content exactly reflects stored text; do not silently trim or normalize stored data.
 The sender object exposes id/username only, not email, groups or permissions. Username
 is the current display value, not a historical snapshot. Editing/version semantics
@@ -52,7 +53,7 @@ Keep current routes and pagination wrappers. During this slice, REST output adds
 canonical fields and retains `message == content` and `room == room_id` aliases.
 There is one serializer for canonical fields; aliases derive from it. Existing
 POST `{message, room}` and 202 queued response remain unchanged. New write fields,
-client_message_id requirements and 201/200 responses belong to spec 004.
+client_message_id requirements and 201/200 responses belong to spec 005.
 
 Proposed WS wire payload:
 
@@ -68,7 +69,7 @@ Proposed WS wire payload:
 
 The internal Channels handler routing key can remain `chat_message`; distinguish
 that transport dispatch key from the public event type. Build data from the saved
-Message, not only the task arguments. event_id is added by spec 004's outbox; this
+Message, not only the task arguments. event_id is added by spec 005's outbox; this
 slice does not promise reliable delivery. REST and WS canonical fields for the same
 row must agree at serialization time (including the current username).
 
@@ -96,8 +97,8 @@ require a separate decision under T023. Serialization does not widen query acces
   routes, or choose versioned endpoints. If versioned, update paths and rollout before Ready.
 - Q2 — Product owner (blocking): approve public sender id/username and current-username
   semantics; snapshot/display-name requirements change this DTO.
-- Q3 — Frontend owner (execution blocker): locate recoverable frontend source under
-  T001. Backend completion alone cannot satisfy AC-006.
+- Q3 — Frontend owner (execution blocker): complete the source/build baseline in
+  spec 002, then extend its adapters. Backend completion alone cannot satisfy AC-006.
 
 No alias removal is authorized by this spec; a later compatibility decision must
 identify supported client versions and evidence before removal.

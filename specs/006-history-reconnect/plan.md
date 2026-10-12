@@ -3,7 +3,7 @@
 ## Approach
 
 Add a per-room committed sequence counter and Message.room_sequence with a unique
-room/sequence constraint and index. Extend the durable transaction from 004; ensure
+room/sequence constraint and index. Extend the durable transaction from 005; ensure
 membership mutations take locks in the same order to avoid deadlocks. Plan a bounded
 backfill/cutover and verify every message writer, including utilities, uses the rule.
 

@@ -16,7 +16,7 @@ state updates by claim token. Recheck deletion eligibility before publishing. Tr
 publish/ack as non-atomic and expose duplicate delivery as part of the contract.
 
 Add retry scanning, dead-event inspection/replay, and minimal logs/metrics. No new
-service split is needed. Full ordering and catch-up are introduced in 005; do not
+service split is needed. Full ordering and catch-up are introduced in 006; do not
 use created_at as proof that all earlier writes have committed.
 
 ## Verification

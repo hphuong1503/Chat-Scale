@@ -14,10 +14,10 @@ that can be retried or inspected.
 
 Atomic Message/Outbox writes, sender-scoped idempotency, dispatcher claims/retries,
 operator replay and saved acknowledgement. Use the canonical fields from
-[003-message-contract](../003-message-contract/spec.md). Exclude read/delivered
+[004-message-contract](../004-message-contract/spec.md). Exclude read/delivered
 receipts, cross-region guarantees, reconnect UI and exactly-once event delivery.
 
-Dependencies: verified 001 access rules, agreed 003 backend DTO, and an Accepted T026
+Dependencies: verified 001 access rules, agreed 004 backend DTO, and an Accepted T026
 ADR replacing the unfinished historical write-pipeline decision. DTO design can be
 agreed before frontend implementation; production rollout still requires a compatible
 client. All contracts below are proposed, not currently implemented.
@@ -29,7 +29,7 @@ client. All contracts below are proposed, not currently implemented.
 POST /messages/ retains `message` and `room` input names and requires a UUID
 `client_message_id` for the durable contract. Sender is request.user. On first success,
 return 201 only after Message and its OutboxEvent commit in one PostgreSQL transaction;
-return the canonical DTO with the persisted client_message_id (and 003's aliases).
+return the canonical DTO with the persisted client_message_id (and 004's aliases).
 A retry by the same sender with the same ID and exact room/content returns 200 with
 the same message ID and creates no new message/event. Different room/content with
 the same sender/ID returns 409, code `idempotency_conflict`. Different senders may
@@ -50,7 +50,7 @@ response has an unknown client outcome; retry the same ID to resolve it.
 
 Each new message creates one persisted event with stable UUID event_id and message_id,
 public type `message.created`, and canonical DTO data. Preserve compatibility fields
-from 003. A publish retry/replay reuses event_id; clients deduplicate by message ID
+from 004. A publish retry/replay reuses event_id; clients deduplicate by message ID
 and event_id. Events may be duplicated or delivered out of order.
 
 Proposed states: pending → leased → published, or retry_wait/dead after failure.
@@ -103,7 +103,7 @@ There is no silent fallback from durable 201 to queued 202.
 - Q2 — Operations/backend (blocking): confirm or revise retry/lease/scan defaults,
   replay ownership and backlog/dead-event handling against T002 targets.
 - Q3 — Product/backend (blocking): define dedupe retention after message/room/account
-  deletion and room-delete cancellation behavior, aligned with spec 002 and T003.
+  deletion and room-delete cancellation behavior, aligned with spec 003 and T003.
 - Q4 — Frontend/backend (rollout blocker): confirm a compatible source client and
   an audited old-queue drain/cutover window. Legacy sends cannot transparently satisfy
   the new idempotency guarantee.
