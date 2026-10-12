@@ -254,6 +254,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
+            .select_related("sender")
             .filter(
                 sender=self.request.user,
                 room__isnull=False,

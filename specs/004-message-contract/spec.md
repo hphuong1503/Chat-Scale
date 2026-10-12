@@ -1,6 +1,6 @@
 # Canonical message representation
 
-Status: Draft
+Status: Implemented
 Owner: Backend and frontend maintainers; product owner resolves compatibility policy
 Related tasks: T020/T021/T023 (message subset); depends on T001 for client integration
 
@@ -93,12 +93,9 @@ require a separate decision under T023. Serialization does not widen query acces
 
 ## Open questions
 
-- Q1 — Backend/frontend (blocking): approve additive aliases/envelope at existing
-  routes, or choose versioned endpoints. If versioned, update paths and rollout before Ready.
-- Q2 — Product owner (blocking): approve public sender id/username and current-username
-  semantics; snapshot/display-name requirements change this DTO.
-- Q3 — Frontend owner (execution blocker): complete the source/build baseline in
-  spec 002, then extend its adapters. Backend completion alone cannot satisfy AC-006.
+- Q1 (Resolved): Additive aliases and envelope at existing routes are approved (message == content, room == room_id, sender_id == sender.id). No versioned endpoints needed in this slice.
+- Q2 (Resolved): Public sender exposes id and username only (privacy protected, no email or groups). Current username display is approved.
+- Q3 (Resolved): Spec 002 frontend baseline is verified and working under frontend/. TypeScript adapters and unit tests will be extended to support canonical fields and legacy aliases.
 
 No alias removal is authorized by this spec; a later compatibility decision must
 identify supported client versions and evidence before removal.
