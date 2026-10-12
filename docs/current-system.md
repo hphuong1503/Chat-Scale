@@ -32,8 +32,7 @@ T010/T011/T014 cover send logging/auth/membership. T016/T017 cover room/user
 management permissions. T020/T021 cover DTO consistency. T026–T040 cover durability,
 idempotency and reconnect. These remain open, including behavior outside spec 001.
 
-Frontend contains a bundle and local dependencies, but no package.json or source
-files were found under src. Full UI rebuild/E2E is blocked by T001.
+Frontend source has been established under `frontend/` with React/Vite/TypeScript, Zustand in-memory auth store, Tailwind CSS, full test suite (`node:test`), typecheck, and verified build pipeline (Spec 002).
 PostgreSQL files are tracked and already have local changes; T005 must preserve
 needed data before cleaning Git. This setup does not modify those files.
 

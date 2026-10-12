@@ -52,6 +52,13 @@ class AuthViewSet(viewsets.ViewSet):
         """
         Refresh JWT access token using refresh token.
         """
-        from rest_framework_simplejwt.views import TokenRefreshView
-        view = TokenRefreshView.as_view()
-        return view(request)
+        from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
+        serializer = TokenRefreshSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)

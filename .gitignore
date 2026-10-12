@@ -7,6 +7,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+*.tsbuildinfo
 downloads/
 eggs/
 .eggs/
@@ -75,6 +76,7 @@ Thumbs.db
 # Node (if using npm/nodejs tools)
 node_modules/
 package-lock.json
+!frontend/package-lock.json
 npm-debug.log
 
 # Misc
@@ -83,3 +85,4 @@ npm-debug.log
 .env.*.local
 secrets/
 credentials/
+production-roadmap/

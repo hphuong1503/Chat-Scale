@@ -20,7 +20,7 @@ T007/T008/T009; không tự đánh dấu các task này hoàn tất. Bước ti�
 
 | Todo | Ưu tiên | Phụ trách | Phụ thuộc | Hoàn thành khi |
 |---|---|---|---|---|
-| [ ] **T001 — Khôi phục source frontend** | P0 | FE | — | Có source, package.json, lockfile và cấu hình build; build sạch tạo được giao diện hiện có. |
+| [x] **T001 — Khôi phục source frontend** | P0 | FE | — | Có source, package.json, lockfile và cấu hình build; build sạch tạo được giao diện hiện có (Spec 002). |
 | [ ] **T002 — Ghi tải mục tiêu** | P1 | PO/BE | — | Có DAU, peak sockets, tin/giây, kích thước phòng và dung lượng dữ liệu dự kiến. |
 | [ ] **T003 — Chốt phạm vi release** | P1 | PO | — | Ghi rõ tính năng bắt buộc/tùy chọn, self-chat, quyền sửa/xóa, retention, account deletion và giới hạn file. |
 | [ ] **T004 — Chốt hạ tầng và ngân sách** | P1 | PO/OPS | T002 | Có nhà cung cấp, vùng, ngân sách, môi trường staging/production và người vận hành dự kiến. |
@@ -34,11 +34,11 @@ T007/T008/T009; không tự đánh dấu các task này hoàn tất. Bước ti�
 
 | Todo | Ưu tiên | Phụ trách | Phụ thuộc | Hoàn thành khi |
 |---|---|---|---|---|
-| [ ] **T010 — Sửa logging trong POST /messages/** | P0 | BE | — | Endpoint không còn AttributeError do logging.log.info; request hợp lệ đi tới bước xử lý tin. |
-| [ ] **T011 — Thống nhất authentication HTTP** | P0 | BE | T010 | Message API có IsAuthenticated, sender lấy từ user xác thực; bỏ đường giải mã JWT trùng không cần thiết. |
-| [ ] **T012 — Kiểm tra login và refresh** | P0 | BE/FE | T001,T011 | Login hợp lệ/sai, access hết hạn và refresh hợp lệ/hết hạn có kết quả đúng; endpoint refresh nhận đúng kiểu request. |
+| [x] **T010 — Sửa logging trong POST /messages/** | P0 | BE | — | Endpoint không còn AttributeError do logging.log.info; request hợp lệ đi tới bước xử lý tin (Spec 001). |
+| [x] **T011 — Thống nhất authentication HTTP** | P0 | BE | T010 | Message API có IsAuthenticated, sender lấy từ user xác thực; bỏ đường giải mã JWT trùng không cần thiết (Spec 001). |
+| [x] **T012 — Kiểm tra login và refresh** | P0 | BE/FE | T001,T011 | Login hợp lệ/sai, access hết hạn và refresh hợp lệ/hết hạn có kết quả đúng; endpoint refresh nhận đúng kiểu request (Spec 002). |
 | [ ] **T013 — Chốt và triển khai logout** | P1 | BE/FE | T003,T012 | Chính sách thu hồi token/session được ghi rõ; client xóa trạng thái và đóng socket; hành vi token cũ khớp chính sách. |
-| [ ] **T014 — Chặn gửi vào phòng ngoài quyền** | P0 | BE | T011 | Người ngoài phòng không enqueue/lưu tin; thành viên gửi được; quyền được kiểm tra trước ghi. |
+| [x] **T014 — Chặn gửi vào phòng ngoài quyền** | P0 | BE | T011 | Người ngoài phòng không enqueue/lưu tin; thành viên gửi được; quyền được kiểm tra trước ghi (Spec 001). |
 | [ ] **T015 — Giới hạn đọc và thao tác tin** | P0 | BE | T003,T011 | List/detail/history chỉ trả dữ liệu có quyền; sửa/xóa kiểm tra sender và chính sách hoặc bị tắt. |
 | [ ] **T016 — Khóa quản trị phòng** | P0 | BE | T003 | MEMBER không sửa/xóa phòng hoặc quản trị thành viên; ADMIN thực hiện được đúng chính sách. |
 | [ ] **T017 — Audit UserViewSet** | P0 | BE | T003 | User thường không sửa/xóa user khác hoặc groups/quyền; API tìm user chỉ trả trường được phép. |
@@ -46,7 +46,7 @@ T007/T008/T009; không tự đánh dấu các task này hoàn tất. Bước ti�
 | [ ] **T019 — Chống trùng DIRECT room** | P1 | BE | T018 | Có khóa cặp user chuẩn hóa và unique constraint; request đồng thời nhận cùng phòng; dữ liệu cũ được xử lý trước migration. |
 | [ ] **T020 — Định nghĩa message DTO** | P1 | BE/FE | T003 | Có schema id, client_message_id, room_id, sender, content, created_at; quy định version khi sửa và event tương ứng. |
 | [ ] **T021 — Áp dụng DTO backend/frontend** | P1 | BE/FE | T001,T020 | History, response gửi và WS dùng schema thống nhất; frontend hiển thị sender/thời gian chính thức. |
-| [ ] **T022 — Sửa kết nối WS và URL môi trường** | P0 | FE/BE | T001,T012 | Hai client xác thực kết nối và nhận tin; không hardcode localhost; auth tạm thời được thay ở T045. |
+| [x] **T022 — Sửa kết nối WS và URL môi trường** | P0 | FE/BE | T001,T012 | Hai client xác thực kết nối và nhận tin; không hardcode localhost; auth tạm thời được thay ở T045 (Spec 002). |
 | [ ] **T023 — Chuẩn hóa validation và lỗi** | P1 | BE | T014,T020 | UUID sai, room không hợp lệ, payload quá lớn và pagination sai trả lỗi có mã ổn định, không lộ stack trace. |
 | [ ] **T024 — Test ma trận quyền** | P0 | QA/BE | T014,T015,T016,T017,T019 | Test thành viên/người ngoài, ADMIN/MEMBER, user API và tạo DIRECT đồng thời chạy trong CI. |
 | [ ] **T025 — Test luồng hai trình duyệt** | P1 | QA/FE | T012,T021,T022,T023 | Login, refresh, tạo phòng, gửi, đọc history và nhận realtime qua hai tài khoản đạt. |

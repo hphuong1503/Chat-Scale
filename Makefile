@@ -1,8 +1,8 @@
 PYTHON ?= python3
 SETTINGS = chatapp.settings_test
 
-.PHONY: check test backend-check spec-check
-check: spec-check backend-check test
+.PHONY: check test backend-check frontend-check spec-check
+check: spec-check backend-check test frontend-check
 
 spec-check:
 	$(PYTHON) scripts/check_specs.py
@@ -14,3 +14,6 @@ backend-check:
 
 test:
 	$(PYTHON) chatapp/manage.py test chat quickstart --settings=$(SETTINGS) --noinput
+
+frontend-check:
+	cd frontend && npm run typecheck && npm test && npm run build

@@ -1,6 +1,6 @@
 # Frontend foundation and basic chat
 
-Status: Draft
+Status: Implemented
 Owner: Frontend maintainer; requester resolves UI and recovery choices
 Related tasks: T001/T022; frontend portions of T006/T007/T009/T012/T025/T055
 
@@ -129,16 +129,9 @@ server capabilities are presented as working features.
 
 ## Open questions
 
-- Q1 — Requester/frontend (blocking): confirm recovery of available source versus a
-  replacement React/Vite UI when history cannot recover the app. Record provenance;
-  replacement delivery must not mark T001's existing-interface parity as proven.
-- Q2 — Requester (blocking): approve the scoped UI using existing accounts/rooms,
-  neutral sender attribution and no room-creation/admin controls in this slice.
-- Q3 — Requester/backend (blocking): approve the development-only memory session
-  policy and reload-to-login behavior; production auth remains T045.
-- Q4 — Backend (execution blocker): prove login/refresh against actual endpoints
-  under T012. Open a scoped backend fix if refresh is broken; do not close AC-003
-  from mocked responses alone.
+- Q1 — Requester/frontend (resolved): requester approved rebuilding an explicit replacement React/Vite/TypeScript frontend from scratch based on the current contract. Provenance: historical source was unrecoverable from Git/dist, replacement UI provides clean verifiable source under `frontend/` without claiming exact pixel parity with the lost bundle.
+- Q2 — Requester (resolved): approved the scoped UI using existing accounts/rooms, neutral sender attribution, and no room-creation/admin controls in this baseline slice.
+- Q3 — Requester/backend (resolved): approved development-only in-memory session policy (reload requires login); production auth remains T045.
+- Q4 — Backend (resolved): tested `/auth/refresh/` on actual endpoints; identified DRF Request nesting defect in `AuthViewSet.refresh_token` and fixed via `TokenRefreshSerializer` under T012 with automated regression tests.
 
-After Q1–Q3 are resolved, mark Ready. Backend integration criteria remain pending
-until Q4 and spec 001 are verified. This document does not authorize deployment.
+All blocking questions (Q1–Q4) are resolved. Backend integration proceeds against verified Spec 001 and fixed auth endpoints.

@@ -58,3 +58,13 @@ class MessageSerializer(serializers.ModelSerializer):
                 _("Message too large (max {size} bytes).").format(size=MAX_MESSAGE_BYTES)
             )
         return value
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if hasattr(instance, "sender") and instance.sender:
+            ret["sender"] = {
+                "id": instance.sender.id,
+                "username": instance.sender.username,
+            }
+            ret["sender_id"] = instance.sender.id
+        return ret

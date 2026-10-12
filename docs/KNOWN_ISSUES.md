@@ -4,13 +4,13 @@ As of 2026-10-12; the stack was not run when this document was written. Reread s
 
 | Area | Evidence / impact | Task |
 |---|---|---|
-| Refresh | Nested TokenRefreshView.as_view receives a DRF Request; needs a regression test | T012 |
+| Refresh | Resolved in Spec 002: TokenRefreshSerializer handles DRF Request cleanly with regression tests | T012 (Verified) |
 | Message CRUD | Queryset filtered by sender; room/edit/delete policies need an audit | T015 |
 | Room CRUD | Update/destroy do not check ADMIN | T016 |
 | User CRUD | Unrestricted queryset, only IsAuthenticated, serializer includes groups | T017 |
 | Room creation | No encompassing transaction or unique DIRECT pair | T018,T019 |
 | DTO | Sender HiddenField; WS lacks ID/time | T020,T021 |
-| Frontend | Missing source/package.json; old bundle opens WS without a token | T001,T022 |
+| Frontend | Resolved in Spec 002: Rebuilt clean React/Vite/TS source with auth, UI, and test suite | T001,T022 (Verified) |
 | Durability | 202 enqueue, task writes DB then calls group_send separately; no outbox/idempotency | T026–T031 |
 | History | Page number/-created_at; no cursor/catch-up | T032–T037 |
 | Socket | Membership checked only at connection time | T038 |

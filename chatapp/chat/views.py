@@ -116,7 +116,7 @@ class RoomViewSet(viewsets.ModelViewSet):
     @decorators.action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
         room = self.get_object()
-        messages = Message.objects.filter(room=room).order_by('-created_at')
+        messages = Message.objects.filter(room=room).select_related('sender').order_by('-created_at')
         page = self.paginate_queryset(messages)
         if page is not None:
             serializer = MessageSerializer(page, many=True)
