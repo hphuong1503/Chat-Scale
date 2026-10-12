@@ -473,18 +473,24 @@ class ConcurrencyLifecycleTests(TransactionTestCase):
         barrier = threading.Barrier(2)
 
         def create_a():
-            client = APIClient()
-            client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_a}")
-            barrier.wait()
-            resp = client.post("/rooms/", {"room_type": "DIRECT", "target_user_id": self.user_b.id}, format="json")
-            results.append(resp)
+            try:
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_a}")
+                barrier.wait()
+                resp = client.post("/rooms/", {"room_type": "DIRECT", "target_user_id": self.user_b.id}, format="json")
+                results.append(resp)
+            finally:
+                connection.close()
 
         def create_b():
-            client = APIClient()
-            client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_b}")
-            barrier.wait()
-            resp = client.post("/rooms/", {"room_type": "DIRECT", "target_user_id": self.user_a.id}, format="json")
-            results.append(resp)
+            try:
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_b}")
+                barrier.wait()
+                resp = client.post("/rooms/", {"room_type": "DIRECT", "target_user_id": self.user_a.id}, format="json")
+                results.append(resp)
+            finally:
+                connection.close()
 
         t1 = threading.Thread(target=create_a)
         t2 = threading.Thread(target=create_b)
@@ -516,18 +522,24 @@ class ConcurrencyLifecycleTests(TransactionTestCase):
         barrier = threading.Barrier(2)
 
         def remove_a():
-            client = APIClient()
-            client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_a}")
-            barrier.wait()
-            resp = client.delete(f"/rooms/{room.id}/members/{self.user_a.id}/")
-            results.append(resp)
+            try:
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_a}")
+                barrier.wait()
+                resp = client.delete(f"/rooms/{room.id}/members/{self.user_a.id}/")
+                results.append(resp)
+            finally:
+                connection.close()
 
         def remove_b():
-            client = APIClient()
-            client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_b}")
-            barrier.wait()
-            resp = client.delete(f"/rooms/{room.id}/members/{self.user_b.id}/")
-            results.append(resp)
+            try:
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_b}")
+                barrier.wait()
+                resp = client.delete(f"/rooms/{room.id}/members/{self.user_b.id}/")
+                results.append(resp)
+            finally:
+                connection.close()
 
         t1 = threading.Thread(target=remove_a)
         t2 = threading.Thread(target=remove_b)
