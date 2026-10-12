@@ -276,7 +276,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       : 'bg-[#f0eff7] text-[#1e1b29] rounded-bl-sm border border-[#e7e5f2]/50'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words">{item.message}</p>
+                  <p className="whitespace-pre-wrap break-words">{item.content || item.message}</p>
+
 
                   {/* Metadata Row inside bubble */}
                   <div

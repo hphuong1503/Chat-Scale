@@ -32,15 +32,28 @@ export interface MessageSender {
   username: string;
 }
 
+export interface CanonicalMessageDTO {
+  id: string;
+  client_message_id: string | null;
+  room_id: string;
+  sender: MessageSender | null;
+  content: string;
+  created_at: string;
+}
+
 export interface MessageItem {
   id: string;
   message: string;
+  content?: string;
   room: string;
+  room_id?: string;
   created_at: string;
-  sender?: MessageSender;
-  sender_id?: number | string;
+  sender?: MessageSender | null;
+  sender_id?: number | string | null;
+  client_message_id?: string | null;
   status?: 'queued' | 'persisted' | 'unknown';
 }
+
 
 export interface PaginatedResponse<T> {
   count: number;

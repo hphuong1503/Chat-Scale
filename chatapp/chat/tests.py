@@ -13,6 +13,7 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Message, Room, RoomMember
+from .serializer import to_canonical_representation
 from .tasks import create_message_task
 
 
@@ -66,11 +67,17 @@ class RoomHistoryBaselineTests(APITestCase):
         layer = AsyncMock()
         with patch("chat.tasks.get_channel_layer", return_value=layer):
             create_message_task.run(self.member.id, "Worker message", self.room.id)
-        self.assertTrue(Message.objects.filter(room=self.room, sender=self.member, message="Worker message").exists())
+        msg = Message.objects.filter(room=self.room, sender=self.member, message="Worker message").first()
+        self.assertIsNotNone(msg)
+        canonical = to_canonical_representation(msg)
         layer.group_send.assert_awaited_once_with(f"chat_{self.room.id}", {
-            "type": "chat_message", "message": "Worker message",
-            "sender_id": str(self.member.id), "room_id": str(self.room.id),
+            "type": "chat_message",
+            "data": canonical,
+            "message": "Worker message",
+            "sender_id": str(self.member.id),
+            "room_id": str(self.room.id),
         })
+
 
 
 class MessageSendAccessTests(APITestCase):

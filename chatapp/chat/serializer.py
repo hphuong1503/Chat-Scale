@@ -39,6 +39,45 @@ class RoomSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'room_type', 'created_by', 'created_at', 'updated_at', 'members']
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
 
+def to_canonical_representation(instance):
+    """
+    Serializes a Message instance to its canonical DTO (Spec 004):
+    {
+        "id": "<message UUID>",
+        "client_message_id": null,
+        "room_id": "<room UUID>",
+        "sender": {"id": int, "username": str},
+        "content": str,
+        "created_at": "<persisted UTC ISO-8601 timestamp>",
+    }
+    """
+    if instance is None:
+        return None
+
+    created_at_repr = (
+        serializers.DateTimeField().to_representation(instance.created_at)
+        if instance.created_at
+        else None
+    )
+    room_id_str = str(instance.room_id) if instance.room_id is not None else None
+
+    sender_repr = None
+    if hasattr(instance, "sender") and instance.sender:
+        sender_repr = {
+            "id": instance.sender.id,
+            "username": instance.sender.username,
+        }
+
+    return {
+        "id": str(instance.id),
+        "client_message_id": None,
+        "room_id": room_id_str,
+        "sender": sender_repr,
+        "content": instance.message,
+        "created_at": created_at_repr,
+    }
+
+
 class MessageSerializer(serializers.ModelSerializer):
     sender = serializers.HiddenField(default=serializers.CurrentUserDefault())
     room = RoomIdRelatedField(queryset=Room.objects.all())
@@ -60,11 +99,15 @@ class MessageSerializer(serializers.ModelSerializer):
         return value
 
     def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        if hasattr(instance, "sender") and instance.sender:
-            ret["sender"] = {
-                "id": instance.sender.id,
-                "username": instance.sender.username,
-            }
-            ret["sender_id"] = instance.sender.id
-        return ret
+        canonical = to_canonical_representation(instance)
+        if canonical is None:
+            return {}
+        # Retain backward-compatible legacy aliases:
+        # message == content, room == room_id, sender_id == sender['id']
+        canonical["message"] = canonical["content"]
+        canonical["room"] = canonical["room_id"]
+        canonical["sender_id"] = (
+            canonical["sender"]["id"] if canonical["sender"] else None
+        )
+        return canonical
+

@@ -4,25 +4,28 @@
 
 | Criterion | Planned test / evidence | Result |
 |---|---|---|
-| AC-001 | test_canonical_message_fields_and_sender_privacy for each read endpoint | Pending |
-| AC-002 | test_saved_message_rest_ws_equivalence using worker plus routed consumer | Pending |
-| AC-003 | test_legacy_send_contract_unchanged including spec 001 regressions | Pending |
-| AC-004 | test_legacy_unicode_and_timestamp_serialization | Pending |
-| AC-005 | test_legacy_read_aliases_pagination_and_permission_matrix | Pending |
-| AC-006 | frontend adapter tests and two-user browser scenario after T001 | Pending |
-| AC-007 | test_utf8_and_json_body_boundaries with exact encoded byte counts | Pending |
+| AC-001 | test_ac001_canonical_message_fields_and_sender_privacy_history and test_ac001_canonical_message_fields_and_sender_privacy_list_and_detail in chat.tests_message_contract | Pass |
+| AC-002 | test_ac002_saved_message_rest_ws_equivalence in chat.tests_message_contract | Pass |
+| AC-003 | test_ac003_legacy_send_contract_unchanged in chat.tests_message_contract | Pass |
+| AC-004 | test_ac004_legacy_unicode_and_timestamp_serialization in chat.tests_message_contract | Pass |
+| AC-005 | test_ac005_legacy_read_aliases_pagination_and_permission_matrix in chat.tests_message_contract | Pass |
+| AC-006 | frontend adapter tests in src/utils/messageHelpers.test.ts (normalizeMessage & mergeMessages) and ChatView component | Pass |
+| AC-007 | test_ac007_utf8_and_json_body_boundaries in chat.tests_message_contract | Pass |
 
 ## Runs
 
-2026-10-12: specification authored against the current source and TODO backlog.
-No feature implementation or acceptance test run is claimed. Test names above are
-planned identifiers/procedures, not existing passing tests.
-
-Documentation validation (2026-10-12): `make spec-check PYTHON=env/bin/python`
-passed (structure checker and six gate regression tests); `git diff --check` passed.
-New spec links resolve, and all four document sets are written in English. These
-checks validate documentation only; every feature acceptance result remains Pending.
+2026-10-12: Complete verification passed via `make check PYTHON=env/bin/python`.
+- `env/bin/python scripts/check_specs.py`: OK.
+- `env/bin/python -m unittest discover -s scripts -p 'test_*.py'`: 6 tests passed.
+- `env/bin/python chatapp/manage.py check --settings=chatapp.settings_test`: 0 issues.
+- `env/bin/python chatapp/manage.py makemigrations --check --dry-run`: No changes detected.
+- `env/bin/python chatapp/manage.py test chat quickstart --settings=chatapp.settings_test --noinput`: 61 tests passed (7 new acceptance tests in `chat.tests_message_contract`).
+- Frontend checks:
+  - `npm run typecheck`: OK (0 TypeScript errors).
+  - `npm test`: 10 tests passed (including 4 new tests for `normalizeMessage` canonical DTO parsing, legacy fallback, WS wire event parsing, and repeated ID deduplication).
+  - `npm run build`: built production bundles successfully in `dist/`.
 
 ## Limitations
 
-No contract or client tests executed. T001 blocks frontend acceptance. This DTO work does not prove outbox durability or realtime delivery.
+This slice implements the canonical Message representation DTO across REST history/list/detail endpoints and WebSocket broadcast events, keeping backward-compatible aliases (`message`, `room`, `sender_id`). Persistence of `client_message_id`, client-driven idempotency, and transactional outbox reliability are explicitly deferred to Spec 005.
+

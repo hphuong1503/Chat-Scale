@@ -41,15 +41,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     # Receive message from room group
     async def chat_message(self, event):
-        message = event['message']
+        message = event.get('message')
         sender_id = event.get('sender_id')
+        data = event.get('data')
 
-        # Send message to WebSocket
+        # Send message to WebSocket with public event envelope and legacy aliases
         await self.send(text_data=json.dumps({
+            'type': 'message.created',
+            'data': data,
             'message': message,
-            'sender_id': sender_id,
-            'room_id': self.room_id
+            'sender_id': str(sender_id) if sender_id is not None else None,
+            'room_id': str(self.room_id),
         }))
+
 
     @database_sync_to_async
     def check_membership(self, user, room_id):
