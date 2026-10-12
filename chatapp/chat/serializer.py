@@ -1,3 +1,4 @@
+import uuid
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -5,6 +6,18 @@ from .models import Message, Room, RoomMember
 
 User = get_user_model()
 MAX_MESSAGE_BYTES = 10 * 1024  # 10 KB
+
+class RoomIdRelatedField(serializers.PrimaryKeyRelatedField):
+    """
+    Accepts any valid UUID on input without querying the database,
+    allowing the view to distinguish nonexistent/unauthorized rooms (404)
+    from malformed UUIDs (400).
+    """
+    def to_internal_value(self, data):
+        try:
+            return uuid.UUID(str(data))
+        except (ValueError, TypeError, AttributeError):
+            raise serializers.ValidationError(_("Must be a valid UUID."))
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,7 +41,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
+    room = RoomIdRelatedField(queryset=Room.objects.all())
 
     class Meta:
         model = Message

@@ -53,4 +53,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def check_membership(self, user, room_id):
-        return RoomMember.objects.filter(user=user, room_id=room_id).exists()
+        try:
+            return RoomMember.objects.filter(user=user, room_id=room_id).exists()
+        except Exception:
+            return False

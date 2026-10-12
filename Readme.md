@@ -1,55 +1,59 @@
+# ChatApp
 
+Django/DRF chat backend with Channels, Celery, PostgreSQL and Redis.
 
+## Start here
 
-# Restart Django server if running
-python manage.py runserver
+- [Development workflow](docs/development-workflow.md): spec → plan → tasks → implementation → evidence.
+- [Spec registry](specs/README.md): implemented foundation and next feature.
+- [Current system](docs/current-system.md): observed behavior and known gaps.
+- [Product scope](docs/product-scope.md): working scope and unresolved decisions.
+- [Roadmap](ROADMAP.md) and [backlog](TODO.md): future work, not implementation status.
 
-# Test the API with curl
-curl -X POST http://localhost:8000/auth/login/ \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"password123"}'
+## Run checks from the repository root
 
-# Run k6 test
-k6 run k6-test.js
+Use Python 3.13 (matching the backend image and CI):
 
-# Install pip
-pip install --no-cache-dir -r requirements.txt
+```sh
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -r chatapp/requirements.txt
+make check PYTHON=.venv/bin/python
+```
 
-# Migrate database
-python manage.py makemigration
-python manage.py migrate
+If the existing local `env` already has dependencies:
 
-# Activate virtual environment
-# macOS / Linux
-source venv/bin/activate
+```sh
+make check PYTHON=env/bin/python
+```
 
+`make check` validates spec structure, runs Django checks, detects missing migrations,
+and runs backend tests with an in-memory SQLite DB and isolated Celery/Channels.
+It does not start development services or touch their database files.
+CI uses a disposable PostgreSQL 15 service with the same command. See
+[verification limits](docs/development-workflow.md#verification).
 
-# Windows (PowerShell)
-.\venv\Scripts\Activate.ps1
-python manage.py runserver
+## Run development services
 
+```sh
+cd chatapp
+docker compose up --build -d
+docker compose logs -f web worker
+```
 
-# Seed messsage
-python manage.py seed_messages admin
+The API is available at `http://localhost:8000/`. Compose runs migrations at startup.
+On an existing checkout, it mounts `chatapp/data/postgres`; preserve that data before
+changing this environment. Use `docker compose down` to stop services.
 
-# Create superuser
-python manage.py createsuperuser 
+```sh
+docker compose exec web python manage.py createsuperuser
+```
 
-# Docker compose
-docker-compose up --build -d
-# To stop Docker containers
-docker-compose down
-# To view logs
-docker-compose logs -f
-# To view running containers
-docker ps
-# To stop a specific container
-docker stop <container_id>
+`POST /auth/login/` accepts `username` and `password` and returns access/refresh JWTs.
+Send `Authorization: Bearer <access>` to authenticated REST endpoints.
+The current WS URL is `/ws/chat/<room_id>/?token=<access>`.
+These are development settings, not a production deployment recipe.
 
-# To remove a specific container
-docker rm <container_id>
-
-# To remove all stopped containers
-docker container prune
-
-
+Frontend development/build is blocked: source files and `package.json` are missing
+(T001). Existing `frontend/dist` is a generated artifact.
+`k6-test.js` is a separate development load script that creates/deletes rooms and
+checks HTTP queue acceptance; it is not part of the isolated test suite.

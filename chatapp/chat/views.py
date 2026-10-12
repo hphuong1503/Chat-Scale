@@ -129,9 +129,19 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     queryset = Message.objects.all().order_by("-created_at")
     serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [parsers.JSONParser]
+
     def get_queryset(self):
-        return super().get_queryset().filter(sender=self.request.user)
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                sender=self.request.user,
+                room__isnull=False,
+                room__members__user=self.request.user,
+            )
+        )
 
     def _validate_content_length(self, content_length):
         """Validate request payload size."""
@@ -145,8 +155,7 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Create a new message asynchronously."""
-        # Validate content length
-        logging.log.info("self action: %s", self.action )
+        logger.info("self action: %s", self.action)
         content_length = request.META.get("CONTENT_LENGTH")
         if not self._validate_content_length(content_length):
             return Response(
@@ -154,26 +163,26 @@ class MessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             )
 
-        # Validate request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Get user_id from JWT token (decoded by middleware, no DB query)
-        user_id = getattr(request, 'jwt_user_id', None)
-        if not user_id:
+        room_id = serializer.validated_data['room']
+        if isinstance(room_id, Room):
+            room_id = room_id.id
+
+        if not RoomMember.objects.filter(room_id=room_id, user=request.user).exists():
             return Response(
-                {"detail": "Authorization required"},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        
-        room = serializer.validated_data['room']
+
         create_message_task.delay(
-                sender_id=user_id,
-                message=serializer.validated_data['message'],
-                room_id=room.id
-            )
-        
+            sender_id=request.user.id,
+            message=serializer.validated_data['message'],
+            room_id=room_id,
+        )
+
         return Response(
             {"status": "Message creation queued"},
-            status=status.HTTP_202_ACCEPTED
+            status=status.HTTP_202_ACCEPTED,
         )
